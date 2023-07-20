@@ -9,15 +9,18 @@ import {
   TextMessage,
 } from '@line/bot-sdk';
 import { LineMessaging } from './types';
+import { JsonDB, Config } from 'node-json-db';
 
 @Controller()
 export class AppController {
   client: Client;
+  db: JsonDB;
   constructor(private readonly appService: AppService) {
     this.client = new Client({
       channelSecret: undefined,
       channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
     });
+    this.db = new JsonDB(new Config('myDataBase', true, false, '/'));
   }
 
   @Get('/callback')
@@ -36,7 +39,9 @@ export class AppController {
         | StickerEventMessage
         | ImageMessage;
 
-      console.log('text', o.message.text);
+      console.log('text', o.message);
+      this.db.push(`/messages/test/${o.timestamp}`, o.message);
+
       switch (o.message.text.trim()) {
         case 'flex':
           message = {
@@ -82,7 +87,6 @@ export class AppController {
           };
           break;
       }
-
       this.client.replyMessage(o.replyToken, message);
     });
   }
